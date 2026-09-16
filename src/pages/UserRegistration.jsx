@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from 'axios'
 
 function UserRegistration() {
   const [registrationData, setRegistrationData] = useState({
@@ -8,21 +9,53 @@ function UserRegistration() {
     contact: '',
     role: '',
   })
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
   function handleChange(event) {
     const { name, value } = event.target
     setRegistrationData({ ...registrationData, [name]: value })
   }
 
-  function handleSubmit(event) {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    console.log('Registration data:', registrationData)
+    setMessage('')
+    setError('')
+
+    try {
+      const response = await axios.post('http://localhost:8001/user/add', registrationData)
+
+      if (response.status === 201) {
+        console.log('Registration successful:', response.data)
+        setError('')
+        setMessage('Registration Success')
+      } else {
+        console.error('Registration failed:', response)
+        setMessage('')
+        setError('Registration Failed')
+      }
+    } catch (error) {
+      setMessage('')
+
+      if (error.response?.status === 500) {
+        setError('Internal Server Error - Failed to Register')
+      } else if (error.request) {
+        setError('Network Error - Server not responding')
+      } else {
+        setError('Bad Request - Check your input')
+      }
+    }
   }
 
   return (
     <section className="form-page">
       <form className="auth-form" onSubmit={handleSubmit}>
         <div>
+          {message ? (
+            <p style={{ color: 'green' }}>{message}</p>
+          ) : error ? (
+            <p style={{ color: 'red' }}>{error}</p>
+          ) : null}
           <p className="eyebrow">New account</p>
           <h1>Register</h1>
           <p className="form-description">Enter your details to create an account.</p>
